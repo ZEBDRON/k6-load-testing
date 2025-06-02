@@ -1,0 +1,7 @@
+voice_files/
+
+
+# Build outputs
+dist/
+build/
+coverage/

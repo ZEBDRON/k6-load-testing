@@ -56,7 +56,6 @@ const LOCAL_INTERVIEW = "http://localhost:9025";
 // const LOCAL_USER = "https://interview.geektrust.com/userservice";
 // const LOCAL_INTERVIEW = "https://interview.geektrust.com/interviewservice";
 
-
 const BASE_URL = `${LOCAL_USER}`;
 const COMMON_HEADERS = {
   "Content-Type": "application/json",
@@ -65,42 +64,44 @@ const COMMON_HEADERS = {
 // ----------------------------
 // DATA GENERATORS
 // ----------------------------
-function replaceEmailDomain(email) {
-  const domain = email.split('@')[1]; 
-  const newEmail = email.replace(`@${domain}`, '@dummy.com');
+export function replaceEmailDomain(email) {
+  const domain = email.split("@")[1];
+  const newEmail = email.replace(`@${domain}`, "@dummy.com");
   return newEmail;
 }
 
-function getRandomUser(api) {
+export function getRandomUser(api) {
   // const res = http.get("https://randomuser.me/api/");
-  const res = http.get("https://fakerapi.it/api/v2/persons?_quantity=1&_locale=en_IN")
+  const res = http.get(
+    "https://fakerapi.it/api/v2/persons?_quantity=1&_locale=en_IN"
+  );
   const results = res.json("data");
   const nameObj = results[0];
-  const name =  nameObj.firstname;
+  const name = nameObj.firstname;
   const email = replaceEmailDomain(results[0].email);
   return { name, email };
 }
 
-function getAudioFile(key) {
+export function getAudioFile(key) {
   if (!voiceFiles[key]) {
     throw new Error(`Audio file ${key} not found`);
   }
   return voiceFiles[key];
 }
 
-function generateInvitationPayload(api) {
+export function generateInvitationPayload(reqID) {
   const randomUser = getRandomUser();
   return {
     email: randomUser.email,
     name: randomUser.name,
-    requirementId: "demo-nuchange-java-test",
+    requirementId: reqID,
     activationTime: moment().add(0, "minute").format("YYYY-MM-DD hh:mm A"),
     companyName: "nuchange",
     validForMinutes: 30,
   };
 }
 
-function parseLoginUrl(url) {
+export function parseLoginUrl(url) {
   try {
     const urlObj = new URL(url);
     const loginCode = urlObj.searchParams.get("loginCode");
@@ -117,12 +118,12 @@ function parseLoginUrl(url) {
 // ----------------------------
 // TEST ACTIONS
 // ----------------------------
-function createInvitation(apiClient) {
-  const payload = generateInvitationPayload(apiClient);
+export function createInvitation(apiClient, reqID) {
+  const payload = generateInvitationPayload(reqID);
   console.log("[Payload]:", payload);
-  sleep(randomIntBetween(3, 6))
+  sleep(randomIntBetween(3, 6));
   const res = apiClient.post("/api/v1/user/invitation", payload);
-  handleResponse(res, "Create Invitation")
+  handleResponse(res, "Create Invitation");
   check(res, {
     "[Invitation] Status 200": (r) => r.status === 200,
     "[Invitation] Has loginUrl": (r) => r.json("link") !== undefined,
@@ -131,11 +132,11 @@ function createInvitation(apiClient) {
   return res.json("link");
 }
 
-function getFullLoginUrl(apiClient, shortCode, loginCode) {
+export function getFullLoginUrl(apiClient, shortCode, loginCode) {
   const url = `/api/v1/user/login-url/${shortCode}?loginCode=${loginCode}`;
-  sleep(randomIntBetween(3, 6))
+  sleep(randomIntBetween(3, 6));
   const res = apiClient.get(url);
-  handleResponse(res, "Login URL")
+  handleResponse(res, "Login URL");
   check(res, {
     "[Login] Status 200": (r) => r.status === 200,
     "[Login] Has url": (r) => r.json("link") !== undefined,
@@ -144,7 +145,7 @@ function getFullLoginUrl(apiClient, shortCode, loginCode) {
   return res.json("link");
 }
 
-function parseFullLoginUrl(url) {
+export function parseFullLoginUrl(url) {
   try {
     const urlObj = new URL(url);
     const loginCode = urlObj.searchParams.get("loginCode");
@@ -162,12 +163,12 @@ function parseFullLoginUrl(url) {
   }
 }
 
-function getAuthToken(apiClient, email, loginCode, invitationId) {
+export function getAuthToken(apiClient, email, loginCode, invitationId) {
   const url = `/api/v1/user/token`;
   const payload = { loginCode, email, invitationId };
-  sleep(randomIntBetween(3, 6))
+  sleep(randomIntBetween(3, 6));
   const res = apiClient.post(url, payload);
-  handleResponse(res, "Auth")
+  handleResponse(res, "Auth");
   check(res, {
     "[Auth] Status 200": (r) => r.status === 200,
     "[Auth] Has token": (r) => r.json("token") !== undefined,
@@ -176,18 +177,23 @@ function getAuthToken(apiClient, email, loginCode, invitationId) {
   return res.json("token");
 }
 
-function createSession(apiClient) {
+export function createSession(apiClient) {
   const url = `/api/v1/session`;
   const payload = { demo: false };
 
   const res = apiClient.post(url, payload);
-  handleResponse(res, "Create Session")
+  handleResponse(res, "Create Session");
   check(res, {
     "[Session] Status 201": (r) => r.status === 201,
   });
 }
 
-function sendMessage(apiClient, message, sourceCode = [], voiceFileName = "") {
+export function sendMessage(
+  apiClient,
+  message,
+  sourceCode = [],
+  voiceFileName = ""
+) {
   const url = `/api/v1/message`;
   const payload = { message, sourceCode, voiceFileName };
 
@@ -196,6 +202,11 @@ function sendMessage(apiClient, message, sourceCode = [], voiceFileName = "") {
   check(res, {
     "[Message] Status 200": (r) => r.status === 200,
   });
+
+  if (res.status === 200 && res.json("actions")) {
+    console.log("Full Message:", fullMessage);
+    return res.json("actions")("reviewResults");
+  }
 
   if (res.status === 200 && res.body.includes("data:")) {
     const messages = res.body
@@ -220,17 +231,17 @@ function sendMessage(apiClient, message, sourceCode = [], voiceFileName = "") {
   }
 }
 
-function createConversation(apiClient) {
+export function createConversation(apiClient) {
   const url = `/api/v1/conversation`;
   const payload = { Action: "Start" };
   const res = apiClient.post(url, payload);
-  handleResponse(res, "Create Conversation")
+  handleResponse(res, "Create Conversation");
   check(res, {
     "[Conversation] Status 200": (r) => r.status === 200,
   });
 }
 
-function uploadTranscript(apiClient, email, file) {
+export function uploadTranscript(apiClient, email, file) {
   const url = `/api/v1/transcript`;
   const fd = new FormData();
   fd.append("email", email);
@@ -245,7 +256,7 @@ function uploadTranscript(apiClient, email, file) {
   return res.json("transcript");
 }
 
-class ApiClient {
+export class ApiClient {
   constructor(baseUrl, headers) {
     this.baseUrl = baseUrl;
     this.headers = headers;
@@ -271,10 +282,16 @@ class ApiClient {
   }
 }
 
-function handleResponse(res, description) {
-  console.log(`[${description}] Response time was ` + String(res.timings.duration) + ' ms');
+export function handleResponse(res, description) {
+  console.log(
+    `[${description}] Response time was ` + String(res.timings.duration) + " ms"
+  );
   if (res.status != 200 && res.status != 201) {
-    console.error(`[${description}] Api failed with code:`, res.status, res.body);
+    console.error(
+      `[${description}] Api failed with code:`,
+      res.status,
+      res.body
+    );
     return null;
   }
   return res;
@@ -287,9 +304,9 @@ export default function () {
   let api = new ApiClient(BASE_URL, COMMON_HEADERS);
 
   // 1. Create invitation and get login URL
-  const loginUrl = createInvitation(api);
+  const loginUrl = createInvitation(api, "demo-nuchange-java-test");
   console.log("Received login URL:", loginUrl);
-  sleep(2)
+  sleep(2);
   //   2. Parse login URL parameters
   const params = parseLoginUrl(loginUrl);
   if (!params) {
@@ -301,7 +318,7 @@ export default function () {
   // 3. Perform login with extracted parameters
   const fullLoginUrl = getFullLoginUrl(api, params.shortCode, params.loginCode);
   console.log("Login successful. Url:", fullLoginUrl);
-  sleep(2)
+  sleep(2);
 
   const nParams = parseFullLoginUrl(fullLoginUrl);
   if (!nParams) {
@@ -318,16 +335,16 @@ export default function () {
   );
   // 4. Update headers for authenticated requests
   COMMON_HEADERS["Authorization"] = `Bearer ${authToken}`;
-  sleep(2)
+  sleep(2);
 
   api = new ApiClient(LOCAL_INTERVIEW, COMMON_HEADERS);
 
   createSession(api);
-  sleep(5)
+  sleep(5);
   createConversation(api);
-  sleep(5)
+  sleep(5);
   sendMessage(api, "Let's start");
-  sleep(5)
+  sleep(5);
 
   INTERVIEW_ITER.forEach(({ key, delay }) => {
     sleep(randomIntBetween(delay[0], delay[1]));
