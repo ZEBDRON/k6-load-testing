@@ -7,7 +7,8 @@ import crypto from "k6/crypto";
 
 // ✅ Use open() in init context
 const solutionFiles = {
-  travelCost: open("./code_solutions/travel_cost/Main.java", "b"), // Load the file as binary
+  java: open("./code_solutions/java/Main.java", "b"), // Load the file as binary
+  react: open("./code_solutions/react/App.js", "b"), // Load the file as binary
 };
 
 export function uploadFile(

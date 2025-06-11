@@ -1,7 +1,15 @@
 voice_files/
+results/
 
 
 # Build outputs
 dist/
 build/
 coverage/
+
+# Playwright
+node_modules/
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
