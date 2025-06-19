@@ -8,7 +8,7 @@ export default async function () {
     id: "3188f316802098a5a4c0534e3b75ce04",
   }; // Simulated response from the IDE API
   const response = http.post(
-    "http://localhost:8000/set-editor-url", // Adjust the endpoint as needed
+    "http://localhost:8000/set-editor-url",
     JSON.stringify({
       ideUrl: `${LOCAL_EDITOR_URL}/${ideResponse.id}/`,
     }),

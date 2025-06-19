@@ -2,7 +2,8 @@ import { check } from "k6";
 import { sleep } from "k6";
 import { randomIntBetween } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 import { SharedArray } from "k6/data";
-import { uploadFile, generateMD5 } from "./azure-file-upload.js";
+import { uploadFile, generateMD5 } from "../azure-file-upload.js";
+import { expireInterview, deleteIDE } from "../vscode/vscode-coding.js";
 import {
   createInvitation,
   createSession,
@@ -15,7 +16,7 @@ import {
   createConversation,
   sendMessage,
   ApiClient,
-} from "./theory.js";
+} from "../theory/theory.js";
 
 export const options = {
   scenarios: {
@@ -58,7 +59,6 @@ const codingQuestionsVoiceFiles = {
 const firstGoalVoiceFiles = {
   first: open(`${FOLLOW_UP_VOICE_FILE_PATH}/first-goal.wav`, "b"),
   second: open(`${FOLLOW_UP_VOICE_FILE_PATH}/first-goal-1.wav`, "b"),
-  // third: open(`${FOLLOW_UP_VOICE_FILE_PATH}/first-goal-2.wav`, "b"),
   dont_know: open(`${FOLLOW_UP_VOICE_FILE_PATH}/dont-know.wav`, "b"),
 };
 
@@ -83,31 +83,28 @@ const SECOND_GOAL_ITER = new SharedArray("second_goal_iterations", function () {
   return [
     { key: "first", delay: [35, 50] },
     { key: "second", delay: [7, 10] },
-    { key: "dont_know", delay: [7, 10] },
-    { key: "dont_know", delay: [7, 10] }, // Adding a fourth iteration for the second goal
-    { key: "dont_know", delay: [7, 10] }, // Adding a fifth iteration for the second goal
   ];
 });
 
 const AZURE_REACT_REMOTE_FILE_PATH = "project/src/App.js"; // The file path in the file share
 
-// const LOCAL_USER = "http://localhost:9024";
-// const LOCAL_INTERVIEW = "http://localhost:9025";
-// const LOCAL_IDE = "http://localhost:9026";
-// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
+const LOCAL_USER = "http://localhost:9024";
+const LOCAL_INTERVIEW = "http://localhost:9025";
+const LOCAL_IDE = "http://localhost:9026";
+const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
 
-const LOCAL_USER = "https://qa-interview.geektrust.in/userservice";
-const LOCAL_INTERVIEW = "https://qa-interview.geektrust.in/interviewservice";
-const LOCAL_IDE = "https://qa-interview.geektrust.in/ideservice";
-const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageqa";
+// const LOCAL_USER = "https://qa-interview.geektrust.in/userservice";
+// const LOCAL_INTERVIEW = "https://qa-interview.geektrust.in/interviewservice";
+// const LOCAL_IDE = "https://qa-interview.geektrust.in/ideservice";
+// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageqa";
 
 // const LOCAL_USER = "https://interview.geektrust.com/userservice";
 // const LOCAL_INTERVIEW = "https://interview.geektrust.com/interviewservice";
 // const LOCAL_IDE = "https://interview.geektrust.com/ideservice";
 // const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageaccount";
 
-const SAS_TOKEN =
-  "sv=2024-11-04&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-12T02:00:27Z&st=2025-06-11T18:00:27Z&spr=https&sig=OcXEcCrPOXJNpAttVvAnb714vAryQZqfrdx3atE%2BB58%3D";
+//Shared Access Signature from Azure Storage Account
+const SAS_TOKEN = "";
 const BASE_URL = `${LOCAL_USER}`;
 const COMMON_HEADERS = {
   "Content-Type": "application/json",
@@ -155,7 +152,6 @@ function getSession(apiClient) {
 
   check(res, {
     "[Session] Status 200": (r) => r.status === 200,
-    "[Session] Has Slug": () => json && typeof json.slug === "string",
   });
 
   return json;
@@ -356,10 +352,6 @@ export default async function () {
     if (transcript) sendMessage(interviewAPI, transcript);
     const session = getSession(interviewAPI);
     console.log("Session: ====", JSON.stringify(session));
-    if (session.slug === "session-ended") {
-      console.log("Session ended, breaking out of the loop.");
-      break;
-    }
   }
   sleep(5);
   for (let i = 0; i < SECOND_GOAL_ITER.length; i++) {
@@ -375,4 +367,7 @@ export default async function () {
       break;
     }
   }
+  sleep(5);
+  expireInterview(interviewAPI, nParams.email);
+  deleteIDE(ideAPI, nParams.email);
 }

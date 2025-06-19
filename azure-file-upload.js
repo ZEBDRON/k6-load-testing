@@ -3,7 +3,7 @@ import { check } from "k6";
 import crypto from "k6/crypto";
 
 // const sasToken =
-//   "sv=2024-11-04&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-06T04:11:31Z&st=2025-06-05T20:11:31Z&spr=https,http&sig=xe1pPh2%2B51W%2BIHZomrbFxZkqw1NSpiEHRV%2FtAKjitRg%3D";
+//   "";
 
 // ✅ Use open() in init context
 const solutionFiles = {
@@ -72,8 +72,7 @@ export default function () {
   // Example usage
   const fileShareName = generateMD5("sebin@geektrust.in");
   const problemId = "travelCost"; // Use the key from solutionFiles
-  const sasToken =
-    "sv=2024-11-04&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-06T04:11:31Z&st=2025-06-05T20:11:31Z&spr=https,http&sig=xe1pPh2%2B51W%2BIHZomrbFxZkqw1NSpiEHRV%2FtAKjitRg%3D";
+  const sasToken = "";
   uploadFile(
     AZURE_STORAGE_ACCOUNT_NAME,
     fileShareName,

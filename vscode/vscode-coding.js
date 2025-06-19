@@ -1,14 +1,9 @@
 import http from "k6/http";
 import { check } from "k6";
-import moment from "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js";
-import { URL } from "https://jslib.k6.io/url/1.0.0/index.js";
-import { FormData } from "https://jslib.k6.io/formdata/0.0.2/index.js";
-import encoding from "k6/encoding";
 import { sleep } from "k6";
 import { randomIntBetween } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 import { SharedArray } from "k6/data";
-import { browser } from "k6/browser";
-import { uploadFile, generateMD5 } from "./azure-file-upload.js";
+import { uploadFile, generateMD5 } from "../azure-file-upload.js";
 import {
   createInvitation,
   createSession,
@@ -21,7 +16,7 @@ import {
   createConversation,
   sendMessage,
   ApiClient,
-} from "./theory.js";
+} from "../theory/theory.js";
 
 export const options = {
   scenarios: {
@@ -46,8 +41,8 @@ export const options = {
 
 const PROBLEM_LANGUAGE = "Java";
 
-const APPROACH_VOICE_FILE_PATH = "voice_files/approach";
-const FOLLOW_UP_VOICE_FILE_PATH = "voice_files/follow_up";
+const APPROACH_VOICE_FILE_PATH = "voice_files/java/approach";
+const FOLLOW_UP_VOICE_FILE_PATH = "voice_files/java/follow_up";
 
 const approachVoiceFiles = {
   approach: open(`${APPROACH_VOICE_FILE_PATH}/approach.wav`, "b"),
@@ -58,15 +53,12 @@ const approachVoiceFiles = {
 const firstGoalVoiceFiles = {
   first: open(`${FOLLOW_UP_VOICE_FILE_PATH}/first-goal.wav`, "b"),
   second: open(`${FOLLOW_UP_VOICE_FILE_PATH}/first-goal-1.wav`, "b"),
-  third: open(`${FOLLOW_UP_VOICE_FILE_PATH}/first-goal-2.wav`, "b"),
   dont_know: open(`${FOLLOW_UP_VOICE_FILE_PATH}/dont-know.wav`, "b"),
 };
 
 const secondGoalVoiceFiles = {
   first: open(`${FOLLOW_UP_VOICE_FILE_PATH}/second-goal.wav`, "b"),
   second: open(`${FOLLOW_UP_VOICE_FILE_PATH}/second-goal-1.wav`, "b"),
-  third: open(`${FOLLOW_UP_VOICE_FILE_PATH}/second-goal-2.wav`, "b"),
-  dont_know: open(`${FOLLOW_UP_VOICE_FILE_PATH}/dont-know.wav`, "b"),
 };
 
 const APPROACH_MSG_LIMIT = 3; // Number of iterations for the approach phase
@@ -109,8 +101,7 @@ const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageqa";
 // const LOCAL_EDITOR_URL = "https://interview.geektrust.com/vscode";
 // const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageaccount";
 
-const SAS_TOKEN =
-  "sv=2024-11-04&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-11T18:34:30Z&st=2025-06-11T10:34:30Z&spr=https&sig=sz0kGrlat5K22T%2FXfb%2BNYr0kgG8USYnOHzUdjmnwHfw%3D";
+const SAS_TOKEN = "";
 const BASE_URL = `${LOCAL_USER}`;
 const COMMON_HEADERS = {
   "Content-Type": "application/json",
@@ -158,6 +149,47 @@ function getSession(apiClient) {
   });
 
   return res.json();
+}
+
+function expireInterview(apiClient, email, invitationId) {
+  // 1. Expire Invitation
+  const payload = { email, invitationId };
+
+  let expireRes = apiClient.post("/api/v1/invitation/expire", payload);
+  console.log(
+    `Expiring invitation for email: ${email}, invitationId: ${invitationId}`
+  );
+  console.log("Expire Response:", JSON.stringify(expireRes, null, 2));
+  handleResponse(expireRes, "Expire Invitation");
+  check(expireRes, {
+    "[Expire Invitation] Status 204": (r) => r.status === 204,
+  });
+
+  if (expireRes.status === 204) {
+    // 2. End Interview Session
+    let sessionRes = apiClient.delete("/api/v1/session");
+    handleResponse(sessionRes, "End Session");
+    check(sessionRes, {
+      "[End Session] Status 204": (r) => r.status === 204,
+    });
+  } else {
+    console.error("Error expiring invitation", expireRes.status);
+  }
+
+  sleep(1); // Pause to simulate real user wait
+}
+
+export function deleteIDE(apiClient) {
+  let ideRes = apiClient.delete("/api/v1/ide");
+  handleResponse(ideRes, "Delete IDE");
+  check(ideRes, {
+    "[Delete IDE] Status 204": (r) => r.status === 204,
+  });
+  if (ideRes.status === 204) {
+    console.log("Interview session expired and IDE deleted successfully.");
+  } else {
+    console.error("Error deleting IDE", ideRes.status);
+  }
 }
 
 function getFirstGoalAudioFile(key) {
@@ -311,33 +343,32 @@ export default async function () {
     AZURE_STORAGE_ACCOUNT_NAME,
     fileShareName,
     AZURE_REMOTE_FILE_PATH,
-    "travelCost",
+    "java",
     SAS_TOKEN
   );
   sleep(15);
-  const reviewResults = sendMessage(interviewAPI, "Review Code");
-  console.log("Review Results: ====", JSON.stringify(reviewResults));
+  const reviewResult = sendMessage(interviewAPI, "Review Code");
+  console.log("Review Results: ====", JSON.stringify(reviewResult));
   sleep(5);
-  if (reviewResults && reviewResults.length > 0) {
+  if (
+    reviewResult &&
+    reviewResult.comments &&
+    reviewResult.comments.length > 0
+  ) {
     sendMessage(
       interviewAPI,
-      `Explain this comment: ${reviewResults[0].comment}`
+      `Explain this comment: ${reviewResult.comments[0]}`
     );
   }
   sleep(5);
   sendMessage(interviewAPI, "Move to follow-up questions");
-  sleep(80); // Candidate waits for follow-up questions
+  sleep(40); // Candidate waits for follow-up questions
   for (let i = 0; i < FIRST_GOAL_ITER.length; i++) {
     const { key, delay } = FIRST_GOAL_ITER[i];
     sleep(randomIntBetween(delay[0], delay[1]));
     const fileData = getFirstGoalAudioFile(key);
     const transcript = uploadTranscript(interviewAPI, nParams.email, fileData);
     if (transcript) sendMessage(interviewAPI, transcript);
-    const session = getSession(interviewAPI);
-    console.log("Session: ====", JSON.stringify(session));
-    if (session.driverBot === "EndInterviewBot") {
-      break;
-    }
   }
   sleep(5);
   for (let i = 0; i < SECOND_GOAL_ITER.length; i++) {
@@ -349,24 +380,27 @@ export default async function () {
     const session = getSession(interviewAPI);
     console.log("Session: ====", JSON.stringify(session));
     if (session.slug === "session-ended") {
-      const response = http.post(
-        "http://localhost:8000/close-browser",
-        null, // No body needed
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (response.status !== 200) {
-        console.error(
-          `❌ Failed to close browser: ${response.status} - ${response.body}`
-        );
-      } else {
-        console.log(`✅ Browser closed successfully`);
-      }
       break;
     }
+  }
+  sleep(5);
+  expireInterview(interviewAPI, nParams.email, nParams.invitationId);
+  deleteIDE(ideAPI);
+  const browserRes = http.post(
+    "http://localhost:8000/close-browser",
+    null, // No body needed
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (response.status !== 200) {
+    console.error(
+      `❌ Failed to close browser: ${response.status} - ${response.body}`
+    );
+  } else {
+    console.log(`✅ Browser closed successfully`);
   }
 }

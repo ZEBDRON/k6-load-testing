@@ -15,14 +15,51 @@ app.post("/set-editor-url", async (req, res) => {
   res.sendStatus(200); // Respond to K6 immediately
 
   try {
-    browser = await chromium.launch({ headless: true });
+    browser = await chromium.launch({ headless: false });
     const context = await browser.newContext();
     const page = await context.newPage();
 
     console.log("🚀 Launching:", ideUrl);
     await page.goto(ideUrl, { timeout: 60000 });
-    await page.waitForTimeout(600000); // Wait for 10 minutes
-    console.log("✅ Done");
+    await page.waitForTimeout(15000); // Wait 15s for full load
+    // Find frame containing the dialog
+    const dialogFrame = page
+      .frames()
+      .find((f) => f.url().includes("webWorkerExtensionHostIframe.html"));
+
+    if (!dialogFrame) {
+      throw new Error("❌ Dialog frame not found!");
+    }
+
+    for (const frame of page.frames()) {
+      console.log("🔍 Frame URL:", frame.url());
+
+      try {
+        const content = await frame.content();
+        if (content.includes("Do you trust the authors")) {
+          console.log("✅ Found frame with trust dialog:", frame.url());
+          // Click the "Yes, I trust the authors" button
+          const trustButton = await frame.waitForSelector(
+            "a.monaco-button.monaco-text-button",
+            { timeout: 20000 }
+          );
+
+          await frame.evaluate(() => {
+            const overlay = document.querySelector(
+              ".monaco-dialog-modal-block.dimmed"
+            );
+            if (overlay) overlay.style.display = "none";
+          });
+
+          await trustButton.click({ force: true });
+          console.log("✅ Clicked trust button successfully");
+        }
+      } catch (err) {
+        console.warn("⚠️ Could not read frame:", frame.url(), err.message);
+      }
+    }
+    await page.waitForTimeout(3000); // small delay
+    await page.screenshot({ path: "debug.png", fullPage: true });
   } catch (err) {
     console.error("❌ Error launching Playwright:", err);
   }

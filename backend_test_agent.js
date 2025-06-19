@@ -36,9 +36,9 @@ export const options = {
 
 function getRandomUser() {
   const res = http.get("https://randomuser.me/api/");
-  console.log(res)
+  console.log(res);
   const user = res.json("results[0]");
-  return { name: "HD", email: "hd@mailinator.com"}
+  return { name: "HD", email: "hd@mailinator.com" };
   // return { name: `${user.name.title} ${user.name.first} ${user.name.last}`, email: user.email };
 }
 
@@ -47,12 +47,18 @@ function createApiClient(baseUrl, headers) {
     post: (endpoint, payload, isFormData = false) => {
       const options = { headers: { ...headers } };
       if (isFormData) {
-        options.headers["Content-Type"] = "multipart/form-data; boundary=" + payload.boundary;
+        options.headers["Content-Type"] =
+          "multipart/form-data; boundary=" + payload.boundary;
         return http.post(`${baseUrl}${endpoint}`, payload.body(), options);
       }
-      return http.post(`${baseUrl}${endpoint}`, JSON.stringify(payload), options);
+      return http.post(
+        `${baseUrl}${endpoint}`,
+        JSON.stringify(payload),
+        options
+      );
     },
     get: (endpoint) => http.get(`${baseUrl}${endpoint}`, { headers }),
+    delete: (endpoint) => http.del(`${baseUrl}${endpoint}`, null, { headers }),
   };
 }
 
@@ -65,9 +71,13 @@ function handleResponse(res, description) {
 }
 
 function sendMessage(apiClient, message, sourceCode = [], voiceFileName = "") {
-  const res = apiClient.post("/api/v1/message", { message, sourceCode, voiceFileName });
+  const res = apiClient.post("/api/v1/message", {
+    message,
+    sourceCode,
+    voiceFileName,
+  });
   if (!handleResponse(res, "Message")) return;
-  
+
   check(res, { "[Message] Status 200": (r) => r.status === 200 });
   return res.json();
 }
@@ -79,7 +89,7 @@ function uploadTranscript(apiClient, email, file, description) {
 
   const res = apiClient.post("/api/v1/transcript", fd, true);
   if (!handleResponse(res, description)) return;
-  
+
   check(res, { "[Upload Transcription] Status 200": (r) => r.status === 200 });
   return res.json("transcript");
 }
@@ -98,19 +108,24 @@ export default function () {
     validForMinutes: 30,
   };
 
-  console.log(invitationPayload)
+  console.log(invitationPayload);
 
-  const invitationRes = userApi.post("/api/v1/user/invitation", invitationPayload);
+  const invitationRes = userApi.post(
+    "/api/v1/user/invitation",
+    invitationPayload
+  );
   if (!handleResponse(invitationRes, "Invitation")) return;
   const loginUrl = invitationRes.json("link");
 
-  console.log(loginUrl)
+  console.log(loginUrl);
 
-  const loginRes = userApi.get(`/api/v1/user/login-url/${loginUrl.split("/").pop()}?loginCode=12345`);
+  const loginRes = userApi.get(
+    `/api/v1/user/login-url/${loginUrl.split("/").pop()}?loginCode=12345`
+  );
   if (!handleResponse(loginRes, "Login")) return;
-  
+
   const authToken = loginRes.json("token");
-  console.log(loginRes)
+  console.log(loginRes);
   COMMON_HEADERS["Authorization"] = `Bearer ${authToken}`;
   interviewApi = createApiClient(LOCAL_INTERVIEW, COMMON_HEADERS);
 

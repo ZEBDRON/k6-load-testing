@@ -12,7 +12,7 @@ export const options = {
   scenarios: {
     parallel_requests: {
       executor: "per-vu-iterations",
-      vus: 2,
+      vus: 1,
       iterations: 1,
       maxDuration: "10m",
     },
@@ -98,6 +98,7 @@ export function generateInvitationPayload(reqID) {
     activationTime: moment().add(0, "minute").format("YYYY-MM-DD hh:mm A"),
     companyName: "nuchange",
     validForMinutes: 30,
+    interviewType: "TEST",
   };
 }
 
@@ -203,11 +204,6 @@ export function sendMessage(
     "[Message] Status 200": (r) => r.status === 200,
   });
 
-  if (res.status === 200 && res.json("actions")) {
-    console.log("Full Message:", fullMessage);
-    return res.json("actions")("reviewResults");
-  }
-
   if (res.status === 200 && res.body.includes("data:")) {
     const messages = res.body
       .split("\n\n") // Split events
@@ -222,12 +218,17 @@ export function sendMessage(
       })
       .filter((obj) => obj !== null);
 
-    // Extract the `fullMessage` field
     const fullMessage = messages.find((m) => m.fullMessage)?.fullMessage || "";
+    const reviewResult = fullMessage?.actions?.reviewResult;
 
+    console.log("Last Message:", fullMessage.actions);
+
+    if (reviewResult) {
+      console.log("Review Result:", reviewResult);
+    }
     console.log("Full Message:", fullMessage);
 
-    return fullMessage;
+    return reviewResult || fullMessage;
   }
 }
 
