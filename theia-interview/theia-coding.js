@@ -99,8 +99,7 @@ const LOCAL_IDE = "http://localhost:9026";
 const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
 
 //Shared Access Signature from Azure Storage Account
-const SAS_TOKEN =
-  "sv=2024-11-04&ss=bfqt&srt=sco&sp=rwdlacupiytfx&se=2025-06-19T22:14:12Z&st=2025-06-19T14:14:12Z&spr=https&sig=fKS3lXoefjJ59nn2nRYtpAKOacwZJKaHHowkxXwnkC0%3D";
+const SAS_TOKEN = "";
 const BASE_URL = `${LOCAL_USER}`;
 const COMMON_HEADERS = {
   "Content-Type": "application/json",
