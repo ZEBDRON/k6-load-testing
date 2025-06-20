@@ -1,9 +1,9 @@
+import http from "k6/http";
 import { check } from "k6";
 import { sleep } from "k6";
 import { randomIntBetween } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 import { SharedArray } from "k6/data";
 import { uploadFile, generateMD5 } from "../azure-file-upload.js";
-import { expireInterview, deleteIDE } from "../vscode/vscode-coding.js";
 import {
   createInvitation,
   createSession,
@@ -16,7 +16,7 @@ import {
   createConversation,
   sendMessage,
   ApiClient,
-} from "../theory/theory.js";
+} from "../theory-interview/theory.js";
 
 export const options = {
   scenarios: {
@@ -24,7 +24,7 @@ export const options = {
       executor: "per-vu-iterations",
       vus: 1,
       iterations: 1,
-      maxDuration: "35m",
+      maxDuration: "45m",
       options: {
         browser: {
           type: "chromium",
@@ -39,21 +39,15 @@ export const options = {
   noConnectionReuse: true,
 };
 
-const PROBLEM_LANGUAGE = "React";
+const PROBLEM_LANGUAGE = "Java";
 
-const APPROACH_VOICE_FILE_PATH = "voice_files/react/approach";
-const CODING_QUESTIONS_VOICE_FILE_PATH = "voice_files/react/coding_questions";
-const FOLLOW_UP_VOICE_FILE_PATH = "voice_files/react/follow_up";
+const APPROACH_VOICE_FILE_PATH = "../voice_files/java/approach";
+const FOLLOW_UP_VOICE_FILE_PATH = "../voice_files/java/follow_up";
 
 const approachVoiceFiles = {
   approach: open(`${APPROACH_VOICE_FILE_PATH}/approach.wav`, "b"),
   follow_up: open(`${APPROACH_VOICE_FILE_PATH}/approach-follow-up.wav`, "b"),
   proceed: open(`${APPROACH_VOICE_FILE_PATH}/proceed-to-editor.wav`, "b"),
-};
-
-const codingQuestionsVoiceFiles = {
-  first: open(`${CODING_QUESTIONS_VOICE_FILE_PATH}/first-question.wav`, "b"),
-  second: open(`${CODING_QUESTIONS_VOICE_FILE_PATH}/second-question.wav`, "b"),
 };
 
 const firstGoalVoiceFiles = {
@@ -65,45 +59,54 @@ const firstGoalVoiceFiles = {
 const secondGoalVoiceFiles = {
   first: open(`${FOLLOW_UP_VOICE_FILE_PATH}/second-goal.wav`, "b"),
   second: open(`${FOLLOW_UP_VOICE_FILE_PATH}/second-goal-1.wav`, "b"),
-  // third: open(`${FOLLOW_UP_VOICE_FILE_PATH}/second-goal-2.wav`, "b"),
-  dont_know: open(`${FOLLOW_UP_VOICE_FILE_PATH}/dont-know.wav`, "b"),
 };
 
 const APPROACH_MSG_LIMIT = 3; // Number of iterations for the approach phase
 
-const FIRST_GOAL_ITER = new SharedArray("first_goal_iterations", function () {
-  return [
-    { key: "first", delay: [35, 50] },
-    { key: "second", delay: [7, 10] },
-    { key: "dont_know", delay: [7, 10] },
-  ];
-});
+const FIRST_GOAL_ITER = new SharedArray(
+  "first_goal_iterations_vscode",
+  function () {
+    return [
+      { key: "first", delay: [35, 50] },
+      { key: "second", delay: [7, 10] },
+      { key: "third", delay: [35, 50] },
+      { key: "dont_know", delay: [7, 10] },
+    ];
+  }
+);
 
-const SECOND_GOAL_ITER = new SharedArray("second_goal_iterations", function () {
-  return [
-    { key: "first", delay: [35, 50] },
-    { key: "second", delay: [7, 10] },
-  ];
-});
+const SECOND_GOAL_ITER = new SharedArray(
+  "second_goal_iterations_vscode",
+  function () {
+    return [
+      { key: "first", delay: [35, 50] },
+      { key: "second", delay: [7, 10] },
+      { key: "third", delay: [35, 50] },
+      { key: "dont_know", delay: [7, 10] },
+    ];
+  }
+);
 
-const AZURE_REACT_REMOTE_FILE_PATH = "project/src/App.js"; // The file path in the file share
+const AZURE_REMOTE_FILE_PATH = "project/src/main/java/Main.java"; // The file path in the file share
 
-const LOCAL_USER = "http://localhost:9024";
-const LOCAL_INTERVIEW = "http://localhost:9025";
-const LOCAL_IDE = "http://localhost:9026";
-const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
+// const LOCAL_USER = "http://localhost:9024";
+// const LOCAL_INTERVIEW = "http://localhost:9025";
+// const LOCAL_IDE = "http://localhost:9026";
+// const LOCAL_EDITOR_URL = "http://localhost:9026/vscode";
+// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
 
-// const LOCAL_USER = "https://qa-interview.geektrust.in/userservice";
-// const LOCAL_INTERVIEW = "https://qa-interview.geektrust.in/interviewservice";
-// const LOCAL_IDE = "https://qa-interview.geektrust.in/ideservice";
-// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageqa";
+const LOCAL_USER = "https://qa-interview.geektrust.in/userservice";
+const LOCAL_INTERVIEW = "https://qa-interview.geektrust.in/interviewservice";
+const LOCAL_IDE = "https://qa-interview.geektrust.in/ideservice";
+const LOCAL_EDITOR_URL = "https://qa-interview.geektrust.in/vscode";
+const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageqa";
 
 // const LOCAL_USER = "https://interview.geektrust.com/userservice";
 // const LOCAL_INTERVIEW = "https://interview.geektrust.com/interviewservice";
 // const LOCAL_IDE = "https://interview.geektrust.com/ideservice";
+// const LOCAL_EDITOR_URL = "https://interview.geektrust.com/vscode";
 // const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageaccount";
 
-//Shared Access Signature from Azure Storage Account
 const SAS_TOKEN = "";
 const BASE_URL = `${LOCAL_USER}`;
 const COMMON_HEADERS = {
@@ -146,15 +149,52 @@ function getSession(apiClient) {
   const url = `/api/v1/session`;
   sleep(randomIntBetween(3, 6));
   const res = apiClient.get(url);
-  const json = res.json();
-
   handleResponse(res, "Session");
-
   check(res, {
     "[Session] Status 200": (r) => r.status === 200,
   });
 
-  return json;
+  return res.json();
+}
+
+export function expireInterview(apiClient, email, invitationId) {
+  // 1. Expire Invitation
+  const payload = { email, invitationId };
+
+  let expireRes = apiClient.post("/api/v1/invitation/expire", payload);
+  console.log(
+    `Expiring invitation for email: ${email}, invitationId: ${invitationId}`
+  );
+  handleResponse(expireRes, "Expire Invitation");
+  check(expireRes, {
+    "[Expire Invitation] Status 204": (r) => r.status === 204,
+  });
+
+  if (expireRes.status === 204) {
+    // 2. End Interview Session
+    let sessionRes = apiClient.delete("/api/v1/session");
+    handleResponse(sessionRes, "End Session");
+    check(sessionRes, {
+      "[End Session] Status 204": (r) => r.status === 204,
+    });
+  } else {
+    console.error("Error expiring invitation", expireRes.status);
+  }
+
+  sleep(1); // Pause to simulate real user wait
+}
+
+export function deleteIDE(apiClient) {
+  let ideRes = apiClient.delete("/api/v1/ide");
+  handleResponse(ideRes, "Delete IDE");
+  check(ideRes, {
+    "[Delete IDE] Status 204": (r) => r.status === 204,
+  });
+  if (ideRes.status === 204) {
+    console.log("Interview session expired and IDE deleted successfully.");
+  } else {
+    console.error("Error deleting IDE", ideRes.status);
+  }
 }
 
 function getFirstGoalAudioFile(key) {
@@ -177,8 +217,7 @@ function getSecondGoalAudioFile(key) {
 export default async function () {
   let userAPI = new ApiClient(BASE_URL, COMMON_HEADERS);
   // 1. Create invitation and get login URL
-
-  const loginUrl = createInvitation(userAPI, "crio-react-problem-testing"); // Use the Golang problem set
+  const loginUrl = createInvitation(userAPI, "coffee-beans-jsr-fd8e2be9");
   console.log("Received login URL:", loginUrl);
   sleep(2);
   //   2. Parse login URL parameters
@@ -222,10 +261,10 @@ export default async function () {
   createConversation(interviewAPI);
   sleep(5);
   sendMessage(interviewAPI, "Let's start");
-  sleep(10);
+  sleep(5);
   getProblemStatement(interviewAPI);
-  // sleep(180); //Candidate understands the problem statement 3 minutes
-  sleep(30);
+  //   sleep(300); //Candidate understands the problem statement
+  sleep(5);
   sendMessage(interviewAPI, "I understand");
   sleep(5);
   let transcript = uploadTranscript(
@@ -234,6 +273,11 @@ export default async function () {
     approachVoiceFiles.approach
   );
   if (transcript) sendMessage(interviewAPI, transcript);
+  // sendMessage(
+  //   interviewAPI,
+  //   "I will start by modeling the domain entities. Define an enum Destination to represent valid destinations (PARIS, TOKYO, CAIRO) along with their respective one-way ticket costs. Create another enum TripType to represent the trip type (ROUND, ONE_WAY), and include a cost multiplier method (e.g., 2x for round trips). Implement a TravelCostCalculator class that takes in the number of travelers, destination, and trip type, and performs the core logic to compute the total cost using these enums. The main class (TravelCostApp) should handle parsing and validating the command-line input, converting strings to enums in a case-insensitive way, handling invalid inputs gracefully using exceptions or fallback messages, and then invoking the calculator to output the result in the required format. Use helper methods to encapsulate input validation and parsing to keep the main method clean and readable. This modular approach not only ensures clarity and testability but also adheres to single-responsibility and open/closed principles."
+  // );
+  sleep(15); // Time to load the code editor
   sleep(5);
   transcript = uploadTranscript(
     interviewAPI,
@@ -282,39 +326,35 @@ export default async function () {
     return;
   }
   console.log("IDE Response: ====", JSON.stringify(ideResponse));
+  const response = http.post(
+    "http://localhost:8000/set-editor-url",
+    JSON.stringify({ ideUrl: `${LOCAL_EDITOR_URL}/${ideResponse.id}/` }),
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  // Check if the response is OK
+  if (!response || response.status !== 200) {
+    // throw new Error(`Failed to set container ID: ${response}`);
+    console.error(`Failed to set container ID: ${response.statusText}`);
+  }
+
+  sleep(10);
 
   const fileShareName = generateMD5(nParams.email);
   uploadFile(
     AZURE_STORAGE_ACCOUNT_NAME,
     fileShareName,
-    AZURE_REACT_REMOTE_FILE_PATH,
-    "react",
+    AZURE_REMOTE_FILE_PATH,
+    "java",
     SAS_TOKEN
   );
-
-  sleep(20);
-
-  //Coding Questions Phase
-  transcript = uploadTranscript(
-    interviewAPI,
-    nParams.email,
-    codingQuestionsVoiceFiles.first
-  );
-  if (transcript) sendMessage(interviewAPI, transcript);
-  sleep(10); //reading the answer
-
-  transcript = uploadTranscript(
-    interviewAPI,
-    nParams.email,
-    codingQuestionsVoiceFiles.second
-  );
-  if (transcript) sendMessage(interviewAPI, transcript);
-  sleep(10); //reading the answer
-
-  //Review Code Phase
-  let reviewResult = sendMessage(interviewAPI, "Review Code");
+  sleep(15);
+  const reviewResult = sendMessage(interviewAPI, "Review Code");
   console.log("Review Results: ====", JSON.stringify(reviewResult));
-  sleep(20); // Reading the review results
+  sleep(5);
   if (
     reviewResult &&
     reviewResult.comments &&
@@ -324,34 +364,16 @@ export default async function () {
       interviewAPI,
       `Explain this comment: ${reviewResult.comments[0]}`
     );
-    sleep(20);
   }
-
-  sendMessage(
-    interviewAPI,
-    `Explain this comment: key={index} usage – Using the array index as a key can lead to issues if the list changes dynamically.`
-  );
-  sleep(20);
-
-  reviewResult = sendMessage(interviewAPI, "Review Code");
-  console.log("Review Results: ====", JSON.stringify(reviewResult));
-  sleep(20); // Reading the review results
-  sendMessage(
-    interviewAPI,
-    `Explain this comment: The grid layout and product card styles are applied via inline style objects. It's better to extract these into CSS classes (in App.css) to improve readability, maintainability, and consistency with React best practices.`
-  );
-  sleep(20);
-
-  sendMessage(interviewAPI, "Move to follow-up questions");
   sleep(5);
+  sendMessage(interviewAPI, "Move to follow-up questions");
+  sleep(40); // Candidate waits for follow-up questions
   for (let i = 0; i < FIRST_GOAL_ITER.length; i++) {
     const { key, delay } = FIRST_GOAL_ITER[i];
     sleep(randomIntBetween(delay[0], delay[1]));
     const fileData = getFirstGoalAudioFile(key);
     const transcript = uploadTranscript(interviewAPI, nParams.email, fileData);
     if (transcript) sendMessage(interviewAPI, transcript);
-    const session = getSession(interviewAPI);
-    console.log("Session: ====", JSON.stringify(session));
   }
   sleep(5);
   for (let i = 0; i < SECOND_GOAL_ITER.length; i++) {
@@ -363,11 +385,27 @@ export default async function () {
     const session = getSession(interviewAPI);
     console.log("Session: ====", JSON.stringify(session));
     if (session.slug === "session-ended") {
-      console.log("Session ended, breaking out of the loop.");
       break;
     }
   }
   sleep(5);
-  expireInterview(interviewAPI, nParams.email);
-  deleteIDE(ideAPI, nParams.email);
+  expireInterview(interviewAPI, nParams.email, nParams.invitationId);
+  deleteIDE(ideAPI);
+  const browserRes = http.post(
+    "http://localhost:8000/close-browser",
+    null, // No body needed
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (response.status !== 200) {
+    console.error(
+      `❌ Failed to close browser: ${response.status} - ${response.body}`
+    );
+  } else {
+    console.log(`✅ Browser closed successfully`);
+  }
 }

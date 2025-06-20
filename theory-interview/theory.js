@@ -24,7 +24,7 @@ export const options = {
   noConnectionReuse: true,
 };
 
-const VOICE_FILE_PATH = "voice_files";
+const VOICE_FILE_PATH = "../voice_files";
 const voiceFiles = {
   first: open(`${VOICE_FILE_PATH}/1.wav`, "b"),
   second: open(`${VOICE_FILE_PATH}/2.wav`, "b"),
@@ -220,8 +220,6 @@ export function sendMessage(
 
     const fullMessage = messages.find((m) => m.fullMessage)?.fullMessage || "";
     const reviewResult = fullMessage?.actions?.reviewResult;
-
-    console.log("Last Message:", fullMessage.actions);
 
     if (reviewResult) {
       console.log("Review Result:", reviewResult);
