@@ -93,20 +93,10 @@ const SECOND_GOAL_ITER = new SharedArray(
 
 const AZURE_REACT_REMOTE_FILE_PATH = "project/src/App.js"; // The file path in the file share
 
-// const LOCAL_USER = "http://localhost:9024";
-// const LOCAL_INTERVIEW = "http://localhost:9025";
-// const LOCAL_IDE = "http://localhost:9026";
-// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
-
-const LOCAL_USER = "https://qa-interview.geektrust.in/userservice";
-const LOCAL_INTERVIEW = "https://qa-interview.geektrust.in/interviewservice";
-const LOCAL_IDE = "https://qa-interview.geektrust.in/ideservice";
-const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageqa";
-
-// const LOCAL_USER = "https://interview.geektrust.com/userservice";
-// const LOCAL_INTERVIEW = "https://interview.geektrust.com/interviewservice";
-// const LOCAL_IDE = "https://interview.geektrust.com/ideservice";
-// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageaccount";
+const LOCAL_USER = "http://localhost:9024";
+const LOCAL_INTERVIEW = "http://localhost:9025";
+const LOCAL_IDE = "http://localhost:9026";
+const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
 
 //Shared Access Signature from Azure Storage Account
 const SAS_TOKEN =

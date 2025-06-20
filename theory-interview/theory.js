@@ -50,12 +50,6 @@ const INTERVIEW_ITER = new SharedArray("interview_iterations", function () {
 const LOCAL_USER = "http://localhost:9024";
 const LOCAL_INTERVIEW = "http://localhost:9025";
 
-// const LOCAL_USER = "https://qa-interview.geektrust.in/userservice";
-// const LOCAL_INTERVIEW = "https://qa-interview.geektrust.in/interviewservice";
-
-// const LOCAL_USER = "https://interview.geektrust.com/userservice";
-// const LOCAL_INTERVIEW = "https://interview.geektrust.com/interviewservice";
-
 const BASE_URL = `${LOCAL_USER}`;
 const COMMON_HEADERS = {
   "Content-Type": "application/json",

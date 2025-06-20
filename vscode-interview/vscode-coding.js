@@ -89,23 +89,11 @@ const SECOND_GOAL_ITER = new SharedArray(
 
 const AZURE_REMOTE_FILE_PATH = "project/src/main/java/Main.java"; // The file path in the file share
 
-// const LOCAL_USER = "http://localhost:9024";
-// const LOCAL_INTERVIEW = "http://localhost:9025";
-// const LOCAL_IDE = "http://localhost:9026";
-// const LOCAL_EDITOR_URL = "http://localhost:9026/vscode";
-// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
-
-const LOCAL_USER = "https://qa-interview.geektrust.in/userservice";
-const LOCAL_INTERVIEW = "https://qa-interview.geektrust.in/interviewservice";
-const LOCAL_IDE = "https://qa-interview.geektrust.in/ideservice";
-const LOCAL_EDITOR_URL = "https://qa-interview.geektrust.in/vscode";
-const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageqa";
-
-// const LOCAL_USER = "https://interview.geektrust.com/userservice";
-// const LOCAL_INTERVIEW = "https://interview.geektrust.com/interviewservice";
-// const LOCAL_IDE = "https://interview.geektrust.com/ideservice";
-// const LOCAL_EDITOR_URL = "https://interview.geektrust.com/vscode";
-// const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstorageaccount";
+const LOCAL_USER = "http://localhost:9024";
+const LOCAL_INTERVIEW = "http://localhost:9025";
+const LOCAL_IDE = "http://localhost:9026";
+const LOCAL_EDITOR_URL = "http://localhost:9026/vscode";
+const AZURE_STORAGE_ACCOUNT_NAME = "codeserverstoragedev";
 
 const SAS_TOKEN = "";
 const BASE_URL = `${LOCAL_USER}`;
