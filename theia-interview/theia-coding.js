@@ -320,7 +320,7 @@ export default async function () {
 
   //Review Code Phase
   let reviewResult = sendMessage(interviewAPI, "Review Code");
-  sleep(30); // Reading the review results
+  sleep(randomIntBetween(45, 120)); // Waiting for the review results
   if (
     reviewResult &&
     reviewResult.comments &&
@@ -340,7 +340,7 @@ export default async function () {
   sleep(20);
 
   reviewResult = sendMessage(interviewAPI, "Review Code");
-  sleep(20); // Reading the review results
+  sleep(randomIntBetween(45, 120)); // Waiting for the review results
   sendMessage(
     interviewAPI,
     `Explain this comment: The grid layout and product card styles are applied via inline style objects. It's better to extract these into CSS classes (in App.css) to improve readability, maintainability, and consistency with React best practices.`
