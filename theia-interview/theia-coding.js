@@ -286,7 +286,7 @@ export default async function () {
   }
   console.log("IDE Response: ====", JSON.stringify(ideResponse));
 
-  sleep(randomIntBetween(200, 500));
+  sleep(randomIntBetween(150, 360)); // Candidate writes code
 
   //Coding Questions Phase
   transcript = uploadTranscript(
@@ -297,7 +297,7 @@ export default async function () {
   if (transcript) sendMessage(interviewAPI, transcript);
   sleep(10); //reading the answer
 
-  sleep(randomIntBetween(200, 500));
+  sleep(randomIntBetween(150, 360)); // Candidate writes code
 
   transcript = uploadTranscript(
     interviewAPI,
@@ -316,7 +316,7 @@ export default async function () {
     SAS_TOKEN
   );
 
-  sleep(60);
+  sleep(10);
 
   //Review Code Phase
   let reviewResult = sendMessage(interviewAPI, "Review Code");

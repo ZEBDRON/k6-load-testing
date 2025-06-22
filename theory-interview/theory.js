@@ -273,6 +273,12 @@ export class ApiClient {
   get(endpoint) {
     return http.get(`${this.baseUrl}${endpoint}`, { headers: this.headers });
   }
+
+  delete(endpoint) {
+    return http.del(`${this.baseUrl}${endpoint}`, null, {
+      headers: this.headers,
+    });
+  }
 }
 
 export function handleResponse(res, description) {
