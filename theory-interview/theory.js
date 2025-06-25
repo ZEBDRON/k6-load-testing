@@ -274,8 +274,8 @@ export class ApiClient {
     return http.get(`${this.baseUrl}${endpoint}`, { headers: this.headers });
   }
 
-  delete(endpoint) {
-    return http.del(`${this.baseUrl}${endpoint}`, null, {
+  delete(endpoint, payload) {
+    return http.del(`${this.baseUrl}${endpoint}`, JSON.stringify(payload), {
       headers: this.headers,
     });
   }
@@ -285,7 +285,7 @@ export function handleResponse(res, description) {
   console.log(
     `[${description}] Response time was ` + String(res.timings.duration) + " ms"
   );
-  if (res.status != 200 && res.status != 201) {
+  if (res.status != 200 && res.status != 201 && res.status != 204) {
     console.error(
       `[${description}] Api failed with code:`,
       res.status,

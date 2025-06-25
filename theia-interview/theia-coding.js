@@ -367,5 +367,5 @@ export default async function () {
 
   //Clean up
   expireInterview(interviewAPI, userEmail, invitationId);
-  deleteIDE(ideAPI, userEmail);
+  deleteIDE(ideAPI, PROBLEM_LANGUAGE);
 }

@@ -172,8 +172,8 @@ export function expireInterview(apiClient, email, invitationId) {
   sleep(1); // Pause to simulate real user wait
 }
 
-export function deleteIDE(apiClient) {
-  let ideRes = apiClient.delete("/api/v1/ide");
+export function deleteIDE(apiClient, language) {
+  let ideRes = apiClient.delete("/api/v1/ide", { language });
   handleResponse(ideRes, "Delete IDE");
   check(ideRes, {
     "[Delete IDE] Status 204": (r) => r.status === 204,
